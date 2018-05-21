@@ -1,3 +1,4 @@
+// will store the event that shows the install-on-homescreen prompt
 var deferredPrompt;
 
 if ('serviceWorker' in navigator) {

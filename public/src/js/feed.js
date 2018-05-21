@@ -4,6 +4,21 @@ var closeCreatePostModalButton = document.querySelector('#close-create-post-moda
 
 function openCreatePostModal() {
   createPostArea.style.display = 'block';
+  // check if the event to show the "Install to Homescreen" prompt has appeared
+  if (deferredPrompt) {
+    deferredPrompt.prompt();
+
+    deferredPrompt.userChoice.then(function (choiceResult) {
+      console.log(choiceResult.outcome);
+      if (choiceResult.outcome === 'dismissed') {
+        console.log('User cancelled installation');
+      } else {
+        console.log('User confirmed installation');
+      }
+    });
+
+    deferredPrompt = null;
+  }
 }
 
 function closeCreatePostModal() {
