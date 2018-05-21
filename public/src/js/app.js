@@ -15,3 +15,26 @@ window.addEventListener('beforeinstallprompt', function (event) {
   event.preventDefault();
   return false;
 });
+
+
+// demo of the fetch API which uses promises
+fetch('https://httpbin.org/post', {
+  method: 'POST', // 'GET' is the default
+  headers: {
+    'Content-Type': 'application/json',
+    'Accept': 'application/json'
+  },
+  body: JSON.stringify({
+    ruelps: 'kapuelps'
+  })
+})
+  .then(function (response) {
+    console.log(response);
+    return response.json();
+  })
+  .then(function (data) {
+    console.log(data);
+  })
+  .catch(function (err) {
+    console.log(err);
+  });
