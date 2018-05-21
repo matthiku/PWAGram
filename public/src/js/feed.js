@@ -6,6 +6,8 @@ function openCreatePostModal() {
   createPostArea.style.display = 'block';
   // check if the event to show the "Install to Homescreen" prompt has appeared
   if (deferredPrompt) {
+    console.log('trying to launch the prompt');
+    
     deferredPrompt.prompt();
 
     deferredPrompt.userChoice.then(function (choiceResult) {
