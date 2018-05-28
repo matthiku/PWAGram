@@ -15,6 +15,33 @@ var STATIC_FILES = [
   'https://cdnjs.cloudflare.com/ajax/libs/material-design-lite/1.3.0/material.indigo-pink.min.css'
 ];
 
+/**
+ * trimCache - maintain size of a cache
+ * 
+ * @param {string} cacheName Name of the cache to be managed
+ * @param {integer} maxItems max. number of items to remain in this cache
+ */
+function trimCache(cacheName, maxItems) {
+  caches.open(cacheName)
+  .then(function (cache) {
+    return cache.keys() // return the array of cache keys
+    .then(function (keys) {
+      if (keys.length > maxItems) {
+        console.log('[Service Worker]', cacheName, 'cleaning up old items -', keys[0]);
+        // delete the oldest item in the cache, then 
+        //    recursively call this function until maxItems is reached
+        cache.delete(keys[0])
+        .then(trimCache(cacheName, maxItems));
+      }
+    });
+  });
+}
+
+/**
+ * SW INSTALLATION phase
+ * 
+ * - cache all static pages
+ */
 self.addEventListener('install', function(event) {
   console.log('[Service Worker] Installing Service Worker ...', event);
   // wait until the caching is done before we finish the installation event
@@ -27,6 +54,13 @@ self.addEventListener('install', function(event) {
   );
 });
 
+/**
+ * 
+ * SW ACTIVATION phase
+ * 
+ * 
+ * - delete outdated caches
+ */
 self.addEventListener('activate', function(event) {
   console.log('[Service Worker] Activating Service Worker ....', event);
   // here we can cleanup old and outdated caches
@@ -48,22 +82,46 @@ self.addEventListener('activate', function(event) {
 });
 
 // helper function to check if URL is found in the provided array
-const isInCache = (requestURL, cacheArr) => cacheArr.some(url => url === requestURL.replace(self.origin, ''));
+function isInArray(string, array) {
+  var cachePath;
+  if (string.indexOf(self.origin) === 0) { // request targets domain where we serve the page from (i.e. NOT a CDN)
+    console.log('matched ', string);
+    cachePath = string.substring(self.origin.length); // take the part of the URL AFTER the domain (e.g. after localhost:8080)
+  } else {
+    cachePath = string; // store the full request (for CDNs)
+  }
+  return array.indexOf(cachePath) > -1;
+}
 
+/**
+ * 
+ * Intercept any fetch request and use various caching strategies
+ * 
+ * 
+ * A) for dynamic data requests, use "Cache, then also Network (with caching)"
+ * 
+ * b) for static pages, use "Cache only"
+ * 
+ * c) for dynamic pages, use "Cache with fallback to network (with caching)"
+ * 
+ * 
+ */
 self.addEventListener('fetch', function (event) {
 
   // requests like API calls need to have their own strategy
-  var url = 'https://httpbin.org/get';
+  var urlArray = ['https://httpbin.org/get'];
 
   /**
    * A) Use Cache AND make a Network fetch, then cache everything!
    */
-  if (event.request.url.indexOf(url) > -1) {
+  if (isInArray(event.request.url, urlArray)) {
     event.respondWith(
       caches.open(CACHE_DYNAMIC_NAME)
         .then(function (cache) {
           return fetch(event.request)
             .then(function (res) {
+              // here would be a proper place to call the trimCache function!
+              // trimCache(CACHE_DYNAMIC_NAME, 9);
               cache.put(event.request, res.clone());
               return res;
             });
@@ -71,7 +129,7 @@ self.addEventListener('fetch', function (event) {
     );
 
   // check if the requested url is part of the static assets
-  } else if (isInCache(event.request.url, STATIC_FILES)) {
+  } else if (isInArray(event.request.url, STATIC_FILES)) {
     // then use the "cache-only" strategy
     event.respondWith(
       caches.match(event.request)
@@ -83,11 +141,11 @@ self.addEventListener('fetch', function (event) {
     event.respondWith(
       // check if we have the response to this request already in our cache
       caches.match(event.request)
-        .then(function (response) {
-          if (response) {
+        .then(function (cachedResponse) {
+          if (cachedResponse) {
             // the request was found in the cache!
             console.log('[Service Worker] fetching this from Cache -', event.request.url);
-            return response;
+            return cachedResponse;
           } else {
             // request/response wasn't found, so we make the network request and return the response,
             // but also store the repsponse in our cache
@@ -95,6 +153,7 @@ self.addEventListener('fetch', function (event) {
               .then(function (resp) {
                 return caches.open(CACHE_DYNAMIC_NAME)
                   .then(function (cache) {
+                    // trimCache(CACHE_DYNAMIC_NAME, 9);
                     // we need to clone the response as response can only used once
                     cache.put(event.request.url, resp.clone());
                     console.log('[Service Worker] adding to dynamic cache -', event.request.url);
@@ -106,8 +165,11 @@ self.addEventListener('fetch', function (event) {
                 return caches.open(CACHE_STATIC_NAME)
                   .then(function (cache) {
                     // only return the default page if it makes sense (e.g. not for CSS files)
-                    if (event.request.url.endsWith('/help'))
+                    // basically for all generic HTML page requests
+                    if (event.request.headers.get('accept').includes('text/html'))
                       return cache.match('/offline.html');
+                    // this can also be improved to return a placeholder image for image requests!
+                    // but it must be part of the static resources stored during the INSTALLATION of the SW!
                   });
               });
           }

@@ -20,6 +20,18 @@ function openCreatePostModal() {
 
     deferredPrompt = null;
   }
+
+  /**
+   * DEMO on how to unregister serviceworkers
+   */
+  // if ('serviceWorker' in navigator) {
+  //   navigator.serviceWorker.getRegistrations()
+  //   .then(function (registrations) {
+  //     for (let i = 0; i < registrations.length; i++) {
+  //       registrations[i].unregister();
+  //     }
+  //   });
+  // }
 }
 
 function closeCreatePostModal() {
@@ -95,6 +107,8 @@ fetch(url)
     createCard();
   });
 
+// we can also check if the cache has the requested data already!
+// Then we can have a quick (albeit temporary) result, even when the network is slow or offline!
 if ('caches' in window) {
   caches.match(url)
   .then(function (response) {
