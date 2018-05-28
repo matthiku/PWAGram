@@ -1,0 +1,39 @@
+<!-- Trigger the modal with a button -->
+<button type="button" class="btn open-modal">Open Modal</button>
+
+<!-- Modal -->
+<dialog>
+  Native dialog box!
+  <button type="button" class="btn close-modal">Close Modal</button>
+</dialog>
+
+<script>
+  const modal = document.querySelector('dialog');
+  const openBtn = document.querySelector('.open-modal');
+  const closeBtn = document.querySelector('.close-modal');
+
+  // showModal() makes modal visible (adds `open` attribute)
+  openBtn.addEventListener('click', () => modal.showModal());
+
+  // close() hides modal (removes `open` attribute)
+  closeBtn.addEventListener('click', () => modal.close());
+</script>
+
+<style type="scss">
+  dialog {
+    padding: 3rem;
+    border-radius: 4px;
+    border: none;
+    box-shadow: 0 4px 6px lightgray;
+    transition: transform .5s;
+    transform: scale(.1);
+
+    &[open] {
+      transform: scale(1);
+    }
+  }
+
+  ::backdrop {
+    background: rgba(black, .5);
+  }
+</style>
