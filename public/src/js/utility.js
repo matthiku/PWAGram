@@ -1,6 +1,8 @@
 /**
  * utility.js - centralised access to indexedDB
  */
+const backendUrl = 'https://us-central1-pwagramma.cloudfunctions.net/storePostData';
+
 
 /**
  * get access to the indexedDB database for caching dynamic data

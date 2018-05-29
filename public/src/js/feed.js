@@ -108,10 +108,10 @@ function updateUI(data) {
 /**
  *  implement the "Cache first, then Web" strategy
  */
-var backendUrl = 'https://pwagramma.firebaseio.com/posts.json';
+var fetchDataUrl = 'https://pwagramma.firebaseio.com/posts.json';
 var networkDataReceived = false;
 
-fetch(backendUrl)
+fetch(fetchDataUrl)
   .then(function(res) {
     return res.json();
   })

@@ -19,7 +19,7 @@ var STATIC_FILES = [
   'https://fonts.googleapis.com/icon?family=Material+Icons',
   'https://cdnjs.cloudflare.com/ajax/libs/material-design-lite/1.3.0/material.indigo-pink.min.css'
 ];
-var backendUrl = 'https://pwagramma.firebaseio.com/posts.json';
+// var backendUrl = 'https://us-central1-pwagramma.cloudfunctions.net/storePostData';
 
 
 
@@ -213,8 +213,10 @@ self.addEventListener('sync', function (event) {
                 console.log('[Service Worker]  New post was sent', res);
                 // clean up the post that has successfuly been sent to the backend
                 if (res.ok) {
-                  // firebase sends back JSON data with the 'name' attribute
-                  deleteItemFromData('syncPosts', dt.id);
+                  res.json()
+                    .then(function (resData) {
+                      deleteItemFromData('syncPosts', resData.id); 
+                    });
                 }
               });
           }
