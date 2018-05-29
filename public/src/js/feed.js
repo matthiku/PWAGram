@@ -61,23 +61,23 @@ function clearCards() {
   }
 }
 
-function createCard() {
+function createCard(data) {
   var cardWrapper = document.createElement('div');
   cardWrapper.className = 'shared-moment-card mdl-card mdl-shadow--2dp';
   var cardTitle = document.createElement('div');
   cardTitle.className = 'mdl-card__title';
-  cardTitle.style.backgroundImage = 'url("/src/images/sf-boat.jpg")';
+  cardTitle.style.backgroundImage = 'url(' + data.image + ')';
   cardTitle.style.backgroundSize = 'cover';
   cardTitle.style.height = '180px';
   cardWrapper.appendChild(cardTitle);
   var cardTitleTextElement = document.createElement('h2');
   cardTitleTextElement.style.color = 'yellow';
   cardTitleTextElement.className = 'mdl-card__title-text';
-  cardTitleTextElement.textContent = 'San Francisco Trip';
+  cardTitleTextElement.textContent = data.title;
   cardTitle.appendChild(cardTitleTextElement);
   var cardSupportingText = document.createElement('div');
   cardSupportingText.className = 'mdl-card__supporting-text';
-  cardSupportingText.textContent = 'In San Francisco';
+  cardSupportingText.textContent = data.location;
   cardSupportingText.style.textAlign = 'center';
 
   var cardSaveButton = document.createElement('button');
@@ -90,10 +90,17 @@ function createCard() {
   sharedMomentsArea.appendChild(cardWrapper);
 }
 
+function updateUI(data) {
+  clearCards();
+  for (let i = 0; i < data.length; i++) {
+    createCard(data[i]);
+  }
+}
+
 /**
  *  implement the "Cache first, then Web" strategy
  */
-var url = 'https://httpbin.org/get';
+var url = 'https://pwagramma.firebaseio.com/posts.json';
 var networkDataReceived = false;
 
 fetch(url)
@@ -103,24 +110,22 @@ fetch(url)
   .then(function(data) {
     console.log('from Web:', data);
     networkDataReceived = true;
-    clearCards();
-    createCard();
+    let dataArray = [];
+    for (const key in data) {
+      dataArray.push(data[key]);
+    }
+    updateUI(dataArray);
   });
 
-// we can also check if the cache has the requested data already!
+// we can also check if the indexedDB has the requested data already!
 // Then we can have a quick (albeit temporary) result, even when the network is slow or offline!
-if ('caches' in window) {
-  caches.match(url)
-  .then(function (response) {
-    if (response) {
-      return response.json();
-    }
-  })
+if ('indexedDB' in window) {
+  readAllData('posts')
   .then(function (data) {
-    console.log('from Cache', data);
     // only use the cached data if we didn't receive the data from the network
-    if (!networkDataReceived)
-      clearCards();
-      createCard();
+    if (!networkDataReceived) {
+      console.log('from Cache', data);
+      updateUI(data);
+    }
   });
 }

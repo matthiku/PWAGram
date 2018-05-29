@@ -1,4 +1,7 @@
-var CACHE_STATIC_NAME = 'static-v13';
+importScripts('/src/js/idb.js');
+importScripts('/src/js/utility.js');
+
+var CACHE_STATIC_NAME = 'static-v1';
 var CACHE_DYNAMIC_NAME = 'dynamic-v1';
 var STATIC_FILES = [
   '/',
@@ -6,6 +9,7 @@ var STATIC_FILES = [
   '/offline.html',
   '/src/js/app.js',
   '/src/js/feed.js',
+  '/src/js/idb.js',
   '/src/js/material.min.js',
   '/src/css/app.css',
   '/src/css/feed.css',
@@ -14,6 +18,8 @@ var STATIC_FILES = [
   'https://fonts.googleapis.com/icon?family=Material+Icons',
   'https://cdnjs.cloudflare.com/ajax/libs/material-design-lite/1.3.0/material.indigo-pink.min.css'
 ];
+
+
 
 /**
  * trimCache - maintain size of a cache
@@ -109,23 +115,24 @@ function isInArray(string, array) {
 self.addEventListener('fetch', function (event) {
 
   // requests like API calls need to have their own strategy
-  var urlArray = ['https://httpbin.org/get'];
+  var urlArray = ['https://pwagramma.firebaseio.com/posts.json'];
 
   /**
    * A) Use Cache AND make a Network fetch, then cache everything!
    */
   if (isInArray(event.request.url, urlArray)) {
-    event.respondWith(
-      caches.open(CACHE_DYNAMIC_NAME)
-        .then(function (cache) {
-          return fetch(event.request)
-            .then(function (res) {
-              // here would be a proper place to call the trimCache function!
-              // trimCache(CACHE_DYNAMIC_NAME, 9);
-              cache.put(event.request, res.clone());
-              return res;
-            });
-        })
+    event.respondWith(fetch(event.request)
+      .then(function (res) {
+        var clonedRes = res.clone();
+        clonedRes.json()
+          .then(function (data) {
+            // loop through each item in the data object from firebase
+            for (var key in data) {
+              writeData('posts', data[key]);
+            }
+          });
+        return res; // return the original response to the frontend javascript app
+      })
     );
 
   // check if the requested url is part of the static assets
