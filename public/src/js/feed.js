@@ -4,7 +4,8 @@ var closeCreatePostModalButton = document.querySelector('#close-create-post-moda
 var sharedMomentsArea = document.querySelector('#shared-moments');
 
 function openCreatePostModal() {
-  createPostArea.style.display = 'block';
+  // show the modal by sliding it up from bottom of the viewport (100vH) to the top (0vH)
+  createPostArea.style.transform = 'translateY(0)'; 
   if (deferredPrompt) {
     deferredPrompt.prompt();
 
@@ -35,7 +36,8 @@ function openCreatePostModal() {
 }
 
 function closeCreatePostModal() {
-  createPostArea.style.display = 'none';
+  // make the modal to drop down and out of the viewport
+  createPostArea.style.transform = 'translateY(100vH)'; 
 }
 
 // allows to save items on demand
@@ -68,7 +70,6 @@ function createCard(data) {
   cardTitle.className = 'mdl-card__title';
   cardTitle.style.backgroundImage = 'url(' + data.image + ')';
   cardTitle.style.backgroundSize = 'cover';
-  cardTitle.style.height = '180px';
   cardWrapper.appendChild(cardTitle);
   var cardTitleTextElement = document.createElement('h2');
   cardTitleTextElement.style.color = 'yellow';

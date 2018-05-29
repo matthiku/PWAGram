@@ -33,6 +33,7 @@
 
 <div id="app">
   <div class="mdl-layout mdl-js-layout mdl-layout--fixed-header">
+
     <header class="mdl-layout__header">
       <div class="mdl-layout__header-row">
         <!-- Title -->
@@ -51,6 +52,7 @@
         </nav>
       </div>
     </header>
+
     <div class="mdl-layout__drawer">
       <span class="mdl-layout-title">PWAGram</span>
       <nav class="mdl-navigation">
@@ -63,6 +65,7 @@
         </div>
       </nav>
     </div>
+
     <main class="mdl-layout__content mat-typography">
       <div id="create-post">
         <form>
@@ -88,23 +91,30 @@
           </div>
         </form>
       </div>
+
       <img src="/src/images/main-image.jpg"
+           srcset="/src/images/main-image.jpg 900w,
+                   /src/images/main-image-lg.jpg 1200w,
+                   /src/images/main-image-sm.jpg 480w"
            alt="Explore the City"
            class="main-image">
       <div class="page-content">
         <h5 class="text-center mdl-color-text--primary">Share your Moments</h5>
         <div id="shared-moments"></div>
       </div>
+
       <div class="floating-button">
         <button class="mdl-button mdl-js-button mdl-button--fab mdl-button--colored"
                 id="share-image-button">
           <i class="material-icons">add</i>
         </button>
       </div>
+
       <div id="confirmation-toast" aria-live="assertive" aria-atomic="true" aria-relevant="text" class="mdl-snackbar mdl-js-snackbar">
         <div class="mdl-snackbar__text"></div>
         <button type="button" class="mdl-snackbar__action"></button>
       </div>
+
     </main>
   </div>
 </div>

@@ -1,8 +1,9 @@
 importScripts('/src/js/idb.js');
 importScripts('/src/js/utility.js');
 
-var CACHE_STATIC_NAME = 'static-v1';
-var CACHE_DYNAMIC_NAME = 'dynamic-v1';
+var version = 2;
+var CACHE_STATIC_NAME = 'static-v' + version;
+var CACHE_DYNAMIC_NAME = 'dynamic-v' + version;
 var STATIC_FILES = [
   '/',
   '/index.html',
@@ -124,7 +125,10 @@ self.addEventListener('fetch', function (event) {
     event.respondWith(fetch(event.request)
       .then(function (res) {
         var clonedRes = res.clone();
-        clonedRes.json()
+        clearAllData('posts')
+          .then(function () {
+            return clonedRes.json();
+          })
           .then(function (data) {
             // loop through each item in the data object from firebase
             for (var key in data) {

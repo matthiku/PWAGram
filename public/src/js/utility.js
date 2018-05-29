@@ -46,3 +46,39 @@ function readAllData(store) {
     return st.getAll();
   });
 }
+
+
+/**
+ * clearAllData - clear all data in a store
+ * 
+ * @param {string} storeName name of the store to be cleared
+ */
+function clearAllData(storeName) {
+  return dbPromise
+    .then(function (db) {
+      var tx = db.transaction(storeName, 'readwrite');
+      var store = tx.objectStore(storeName);
+      store.clear();
+      return tx.complete;
+    });
+}
+
+
+/**
+ * deleteItemFromData - delete a single item within an object store
+ * 
+ * @param {string} storeName 
+ * @param {*} id 
+ */
+function deleteItemFromData(storeName, id) {
+  return dbPromise
+    .then(function (db) {
+      var tx = db.transaction(storeName, 'readwrite');
+      var store = tx.objectStore(storeName);
+      store.delete(id);
+      return tx.complete;
+    })
+    .then(function () {
+      console.log('item deleted.');
+    });
+}
