@@ -19,6 +19,7 @@ var STATIC_FILES = [
   'https://fonts.googleapis.com/icon?family=Material+Icons',
   'https://cdnjs.cloudflare.com/ajax/libs/material-design-lite/1.3.0/material.indigo-pink.min.css'
 ];
+var backendUrl = 'https://pwagramma.firebaseio.com/posts.json';
 
 
 
@@ -92,7 +93,6 @@ self.addEventListener('activate', function(event) {
 function isInArray(string, array) {
   var cachePath;
   if (string.indexOf(self.origin) === 0) { // request targets domain where we serve the page from (i.e. NOT a CDN)
-    console.log('matched ', string);
     cachePath = string.substring(self.origin.length); // take the part of the URL AFTER the domain (e.g. after localhost:8080)
   } else {
     cachePath = string; // store the full request (for CDNs)
@@ -122,21 +122,23 @@ self.addEventListener('fetch', function (event) {
    * A) Use Cache AND make a Network fetch, then cache everything!
    */
   if (isInArray(event.request.url, urlArray)) {
-    event.respondWith(fetch(event.request)
-      .then(function (res) {
-        var clonedRes = res.clone();
-        clearAllData('posts')
-          .then(function () {
-            return clonedRes.json();
-          })
-          .then(function (data) {
-            // loop through each item in the data object from firebase
-            for (var key in data) {
-              writeData('posts', data[key]);
-            }
-          });
-        return res; // return the original response to the frontend javascript app
-      })
+    event.respondWith(
+      fetch(event.request)
+        .then(function (res) {
+          var clonedRes = res.clone();
+          clearAllData('posts')
+            .then(function () {
+              return clonedRes.json();
+            })
+            .then(function (data) {
+              // loop through each item in the data object from firebase
+              console.log('[Service Worker] cloned response from fetching', event.request.url, data);
+              for (var key in data) {
+                writeData('posts', data[key]);
+              }
+            });
+          return res; // return the original response to the frontend javascript app
+        })
     );
 
   // check if the requested url is part of the static assets
@@ -188,4 +190,35 @@ self.addEventListener('fetch', function (event) {
     );
   }
 
+});
+
+
+/**
+ * Listen to SYNC events
+ * 
+ * and act depending on the tag name of the sync event 
+ */
+self.addEventListener('sync', function (event) {
+  console.log('[Service Worker] Background Syncing,', event);
+  if (event.tag === 'sync-new-post') {
+    console.log('[Service Worker]  Syncing new post');
+    event.waitUntil(
+      // get all posts waiting to be synced
+      readAllData('syncPosts')
+        .then(function (data) {
+          // loop through each single post
+          for (var dt of data) {
+            sendData(backendUrl, dt)
+              .then(function(res) {
+                console.log('[Service Worker]  New post was sent', res);
+                // clean up the post that has successfuly been sent to the backend
+                if (res.ok) {
+                  // firebase sends back JSON data with the 'name' attribute
+                  deleteItemFromData('syncPosts', dt.id);
+                }
+              });
+          }
+        })
+    );
+  }
 });

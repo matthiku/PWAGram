@@ -1,11 +1,18 @@
+
 var shareImageButton = document.querySelector('#share-image-button');
 var createPostArea = document.querySelector('#create-post');
 var closeCreatePostModalButton = document.querySelector('#close-create-post-modal-btn');
 var sharedMomentsArea = document.querySelector('#shared-moments');
 
+var form = document.querySelector('form');
+var titleInput = document.querySelector('#title');
+var locationInput = document.querySelector('#location');
+
 function openCreatePostModal() {
   // show the modal by sliding it up from bottom of the viewport (100vH) to the top (0vH)
-  createPostArea.style.transform = 'translateY(0)'; 
+  createPostArea.style.transform = 'translateY(0)';
+
+
   if (deferredPrompt) {
     deferredPrompt.prompt();
 
@@ -101,10 +108,10 @@ function updateUI(data) {
 /**
  *  implement the "Cache first, then Web" strategy
  */
-var url = 'https://pwagramma.firebaseio.com/posts.json';
+var backendUrl = 'https://pwagramma.firebaseio.com/posts.json';
 var networkDataReceived = false;
 
-fetch(url)
+fetch(backendUrl)
   .then(function(res) {
     return res.json();
   })
@@ -130,3 +137,57 @@ if ('indexedDB' in window) {
     }
   });
 }
+
+/**
+ * Action triggered by the Submit button of the form - send data to the backend
+ */
+form.addEventListener('submit', function (event) {
+  event.preventDefault();
+
+  // check if the form is filled out
+  if (titleInput.value.trim() === '' || locationInput.value.trim() === '') {
+    alert('Please fill out all entries');
+    return;
+  }
+
+  closeCreatePostModal();
+
+  var newPost = {
+    id: new Date().toISOString(),
+    title: titleInput.value,
+    location: locationInput.value,
+    image: 'https://firebasestorage.googleapis.com/v0/b/pwagramma.appspot.com/o/sf-boat.jpg?alt=media&token=634a57d9-8726-49c5-a6a1-32c2a327bfb1'
+  };
+
+  // if we have a serviceWorker and a SyncManager, we can defer the 
+  // sending of data to the Service Worker, thus enable offline support
+  if ('serviceWorker' in navigator && 'SyncManager' in window) {
+    console.log('tryuing to send sync Event');
+    navigator.serviceWorker.ready
+      .then(function (sw) {
+        console.log('ServiceWorker is ready, sending sync Event');
+        // write the data to our indexedDB and then send the Sync Event
+        writeData('syncPosts', newPost)
+          .then(function () {
+            return sw.sync.register('sync-new-post'); // register Sync Event
+          })
+          .then(function () { // not mandatory, just a little feedback for the user
+            var snackbarContainer = document.querySelector('#confirmation-toast');
+            var data = {message: 'Your post was saved for syncing'};
+            snackbarContainer.MaterialSnackbar.showSnackbar(data);
+            createCard(newPost);
+          })
+          .catch(function (error) {
+            console.log(error);
+          });
+      });
+  } else {
+    // fallback function if browser doesn't support background syncing
+    sendData(backendUrl, newPost)
+      .then(function (res) {
+        console.log('data was sent to the backend', res);
+        // create a new card with that data
+        createCard(newPost);
+      });
+  }
+});
