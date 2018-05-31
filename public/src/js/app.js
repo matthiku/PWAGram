@@ -45,12 +45,53 @@ function displayConfirmNotification() {
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.ready
       .then(function (swreg) {
-        swreg.showNotification('Successfully subscribed (from SWReg)', options);
+        swreg.showNotification('Successfully subscribed', options);
       });
   } else  {
     // send notification without using a service worker
     new Notification('Successfully subscribed!', options);
   }  
+}
+
+// also subscribe the user niow to PUSH NOTIFICATIONS
+function configurePushSubscription() {
+  if (!('serviceWorker' in navigator)) return;
+
+  var reg;
+  navigator.serviceWorker.ready
+    .then(function (swreg) {
+      reg = swreg;
+      return swreg.pushManager.getSubscription();
+    })
+    .then(function (sub) {
+      if (sub === null) {
+        // create a new subscription
+        var vapidPublicKey = 'BLXjpE6I0smTQdgFYoqsZOiKTDbL3h3APdsIW22G3ZhkrnON6qetR5sXl8jiiMqNHx9oxqTF5yfKHzxZcgVpRUE';
+        return reg.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: urlBase64ToUint8Array(vapidPublicKey)
+        });
+      } else {
+        // we already have a subscription
+      }
+    })
+    .then(function (newSubscr) {
+      // store the new subscription on our backend server (here: firebase)
+      return fetch('https://pwagramma.firebaseio.com/subscriptions.json', {
+        method: 'POST',
+        headers: {
+          'Content-type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify(newSubscr)
+      });
+    })
+    .then(function (res) {
+      if (res.ok) {
+        displayConfirmNotification();
+      }
+    })
+    .catch(err => console.log(err));
 }
 
 // add logic to handle the "Enable notification" button clicks
@@ -61,7 +102,8 @@ function askForNotificationPermission() {
     if (result !== 'granted') {
       console.log('No notifications permission granted by user');      
     } else {
-      displayConfirmNotification();
+      configurePushSubscription();
+      // displayConfirmNotification(); (just for demo purposes)
       // perhaps hide buttons now
     }
   });
