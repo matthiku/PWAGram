@@ -224,3 +224,25 @@ self.addEventListener('sync', function (event) {
     );
   }
 });
+
+
+/**
+ * Listen to click events on Notifications
+ */
+self.addEventListener('notificationclick', function (event) {
+  console.log(event);
+  var notification = event.notification;
+  if (event.action === 'confirm') {
+    // do nothing for now...
+  } else {
+    console.log(event.action);
+  }
+  notification.close();
+});
+
+/**
+ * Listen to CLOSE events from Notifications
+ */
+self.addEventListener('notificationclose', function (event) {
+  console.log(event);
+});
