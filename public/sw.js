@@ -1,3 +1,5 @@
+/* jshint esversion: 6 */
+
 importScripts('/src/js/idb.js');
 importScripts('/src/js/utility.js');
 
@@ -236,11 +238,29 @@ self.addEventListener('notificationclick', function (event) {
   console.log(event);
   var notification = event.notification;
   if (event.action === 'confirm') {
-    // do nothing for now...
+    // do nothing else for now...
+    notification.close();
   } else {
     console.log(event.action);
+    // open a new window (or tab) in the browser
+    event.waitUntil(
+      // refers to all windows or browser tasks related to this service worker
+      clients.matchAll()
+      .then((clientsArr) => {
+        // find windows which are open or visible
+        var client = clientsArr.find((c) => {
+          return c.visibiityState === 'visible';
+        });
+        if (client !== undefined) {
+          client.navigate('http://localhost:8080');
+          client.focus();
+        } else {
+          clients.openWindow('http://localhost:8080');
+        }
+        notification.close();
+      })
+    );
   }
-  notification.close();
 });
 
 /**
@@ -248,4 +268,28 @@ self.addEventListener('notificationclick', function (event) {
  */
 self.addEventListener('notificationclose', function (event) {
   console.log(event);
+});
+
+
+/**
+ * Listen to PUSH NOTIFICATIONS 
+ */
+self.addEventListener('push', (event) => {
+  console.log('Push notification received', event);
+
+  // receive the notification
+  var data = {title: 'New', content: 'Something new happended'};
+  if (event.data) {
+    data = JSON.parse(event.data.text());
+  }
+
+  // show the notification
+  var options = {
+    body: data.content,
+    icon: '/src/images/icons/app-icon-96x96.png',
+    badge: '/src/images/icons/app-icon-96x96.png'
+  };
+  event.waitUntil(
+    self.registration.showNotification(data.title, options)
+  );
 });
