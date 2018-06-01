@@ -65,14 +65,17 @@ function configurePushSubscription() {
     })
     .then(function (sub) {
       if (sub === null) {
+        console.log('creating a new subscription', sub);
         // create a new subscription
         var vapidPublicKey = 'BLXjpE6I0smTQdgFYoqsZOiKTDbL3h3APdsIW22G3ZhkrnON6qetR5sXl8jiiMqNHx9oxqTF5yfKHzxZcgVpRUE';
+        // return the new subscr as a promise
         return reg.pushManager.subscribe({
           userVisibleOnly: true,
           applicationServerKey: urlBase64ToUint8Array(vapidPublicKey)
         });
       } else {
-        // we already have a subscription
+        // do nothing for now, as we already have a subscription
+        console.log('browser/client is already subscribed to this!');
       }
     })
     .then(function (newSubscr) {
@@ -89,6 +92,8 @@ function configurePushSubscription() {
     .then(function (res) {
       if (res.ok) {
         displayConfirmNotification();
+      } else {
+        console.log('saving new subscr to backend failed!');
       }
     })
     .catch(err => console.log(err));

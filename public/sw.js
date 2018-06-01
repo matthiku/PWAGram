@@ -116,29 +116,32 @@ function isInArray(string, array) {
 self.addEventListener('fetch', function (event) {
 
   // requests like API calls need to have their own strategy
-  var urlArray = ['https://pwagramma.firebaseio.com/posts.json'];
+  var urlArray = [
+    'https://pwagramma.firebaseio.com/posts.json',
+    'https://pwagramma.firebaseio.com/subscriptions.json'
+  ];
 
   /**
    * A) Use Cache AND make a Network fetch, then cache everything!
    */
-  if (isInArray(event.request.url, urlArray)) {
+  if (isInArray(event.request.url, urlArray) && event.request.method === 'GET') {
     event.respondWith(
       fetch(event.request)
-        .then(function (res) {
-          var clonedRes = res.clone();
-          clearAllData('posts')
-            .then(function () {
-              return clonedRes.json();
-            })
-            .then(function (data) {
-              // loop through each item in the data object from firebase
-              console.log('[Service Worker] cloned response from fetching', event.request.url, data);
-              for (var key in data) {
-                writeData('posts', data[key]);
-              }
-            });
-          return res; // return the original response to the frontend javascript app
-        })
+      .then(function (res) {
+        var clonedRes = res.clone();
+        clearAllData('posts')
+          .then(function () {
+            return clonedRes.json();
+          })
+          .then(function (data) {
+            // loop through each item in the data object from firebase
+            console.log('[Service Worker] cloned response from fetching', event.request.url, data);
+            for (var key in data) {
+              writeData('posts', data[key]);
+            }
+          });
+        return res; // return the original response to the frontend javascript app
+      })
     );
 
   // check if the requested url is part of the static assets
