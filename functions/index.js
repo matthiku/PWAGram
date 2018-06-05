@@ -50,7 +50,11 @@ exports.storePostData = functions.https.onRequest(
                 p256dh: sub.val().keys.p256dh
               }
             };
-            webpush.sendNotification(pushConfig, JSON.stringify({title: 'New Post', content: 'New Post added!'}));
+            webpush.sendNotification(pushConfig, JSON.stringify({
+              title: 'New Post',
+              content: 'New Post added!',
+              openUrl: '/help'
+            }));
           });
           return response.status(201).json({
             message: 'Data stored',

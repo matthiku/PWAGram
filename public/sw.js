@@ -232,7 +232,7 @@ self.addEventListener('sync', function (event) {
 
 
 /**
- * Listen to click events on Notifications
+ * Listen to CLICK events on Notifications
  */
 self.addEventListener('notificationclick', function (event) {
   console.log(event);
@@ -252,10 +252,10 @@ self.addEventListener('notificationclick', function (event) {
           return c.visibiityState === 'visible';
         });
         if (client !== undefined) {
-          client.navigate('http://localhost:8080');
+          client.navigate(notification.data.url);
           client.focus();
         } else {
-          clients.openWindow('http://localhost:8080');
+          clients.openWindow(notification.data.url);
         }
         notification.close();
       })
@@ -278,7 +278,11 @@ self.addEventListener('push', (event) => {
   console.log('Push notification received', event);
 
   // receive the notification
-  var data = {title: 'New', content: 'Something new happended'};
+  var data = { // initial dummy values
+    title: 'New',
+    content: 'Something new happended',
+    openUrl: '/'
+  };
   if (event.data) {
     data = JSON.parse(event.data.text());
   }
@@ -287,7 +291,10 @@ self.addEventListener('push', (event) => {
   var options = {
     body: data.content,
     icon: '/src/images/icons/app-icon-96x96.png',
-    badge: '/src/images/icons/app-icon-96x96.png'
+    badge: '/src/images/icons/app-icon-96x96.png',
+    data: {
+      url: data.openUrl
+    }
   };
   event.waitUntil(
     self.registration.showNotification(data.title, options)
