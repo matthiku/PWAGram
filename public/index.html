@@ -71,21 +71,44 @@
 
     <main class="mdl-layout__content mat-typography">
       <div id="create-post">
+
+        <!-- showing the live video from the built-in camera and taking a picture -->
+        <video id="player" autoplay></video>
+        <canvas id="canvas" width="320px" height="240px"></canvas>
+        <button id="capture-btn" class="mdl-button mdl-js-button mdl-button--raised mdl-button--colored">Capture</button>
+
+        <!-- fallback for browsers not supporting the above -->
+        <div id="pick-image">
+          <h6>Pick an image instead</h6>
+          <input type="file" type="image/*" id="image-picker">
+        </div>
+
+
+        <!-- form to enter title and location -->
         <form>
+
           <div class="input-section mdl-textfield mdl-js-textfield mdl-textfield--floating-label">
             <input class="mdl-textfield__input" type="text" id="title">
             <label class="mdl-textfield__label" for="title" name="title">Title</label>
           </div>
+
           <div class="input-section mdl-textfield mdl-js-textfield mdl-textfield--floating-label" id="manual-location">
             <input class="mdl-textfield__input" type="text" id="location">
             <label class="mdl-textfield__label" for="location" name="location">Location</label>
           </div>
+
+          <div class="input-section">
+            <button id="location-button" class="mdl-button mdl-js-button mdl-button--colored" type="button">Get Location</button>
+            <div id="location-loader" class="mdl-spinner mdl-js-spinner is-active"></div>
+          </div>
+
           <br>
           <div>
             <button class="mdl-button mdl-js-button mdl-button--raised mdl-button--colored mdl-color--accent"
                     type="submit" id="post-btn">Post!
             </button>
           </div>
+
           <br>
           <div>
             <button class="mdl-button mdl-js-button mdl-button--fab" id="close-create-post-modal-btn" type="button">
@@ -93,6 +116,7 @@
             </button>
           </div>
         </form>
+
       </div>
 
       <img src="/src/images/main-image.jpg"

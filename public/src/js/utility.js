@@ -1,8 +1,9 @@
+/* jshint esversion: 6 */
+
 /**
  * utility.js - centralised access to indexedDB
  */
 const backendUrl = 'https://us-central1-pwagramma.cloudfunctions.net/storePostData';
-
 
 /**
  * get access to the indexedDB database for caching dynamic data
@@ -98,13 +99,16 @@ function deleteItemFromData(storeName, id) {
 function sendData(url, data) {
   console.log('trying to send to', url, ' this data:', data);
 
+  // send form data to a backend
+  var postData = new FormData();
+  postData.append('id', data.id);
+  postData.append('title', data.title);
+  postData.append('location', data.location);
+  postData.append('file', data.image, data.id + '.ong');
+
   return fetch(url, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json'
-      },
-      body: JSON.stringify(data)
+      body: postData
     });
 }
 
@@ -127,4 +131,21 @@ function urlBase64ToUint8Array(base64String) {
     outputArray[i] = rawData.charCodeAt(i);
   }
   return outputArray;
+}
+
+/**
+ * dataURItoBlob - convert a base64 URL to a file
+ * 
+ * @param {string} dataURI base64 URL string
+ */
+function dataURItoBlob(dataURI) {
+  var byteString = atob(dataURI.split(',')[1]);
+  var mimeString = dataURI.split(',')[0].split(':')[1].split(';')[0];
+  var ab = new ArrayBuffer(byteString.length);
+  var ia = new Uint8Array(ab);
+  for (let i = 0; i < byteString.length; i++) {
+    ia[i] = byteString.charCodeAt(i);
+  }
+  var blob = new Blob([ab], {type: mimeString});
+  return blob;
 }

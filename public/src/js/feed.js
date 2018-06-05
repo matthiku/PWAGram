@@ -8,9 +8,75 @@ var form = document.querySelector('form');
 var titleInput = document.querySelector('#title');
 var locationInput = document.querySelector('#location');
 
+var canvasElem = document.querySelector('#canvas');
+var videoPlayer = document.querySelector('#player');
+var imagePicker = document.querySelector('#image-picker');
+var captureButton = document.querySelector('#capture-btn');
+var imagePickerArea = document.querySelector('#pick-image');
+var picture;
+
+// progressive way of using device media
+function initializeMedia() {
+  // create our own polyfill if the browser doesn't support media devices 
+  if (!('mediaDevices' in navigator)) {
+    navigator.mediaDevices = {};
+  }
+
+  // trying to create our own getUserMedia feature
+  if (!('getUserMedia' in navigator.mediaDevices)) {
+    navigator.mediaDevices.getUserMedia = function (constraints) {
+      // try to get older implementations of this feature from Safari or Firefox browsers
+      var getUserMedia = navigator.webkitGetUserMedia || mozGetUserMedia;
+      // still none available - reject this feature promise
+      if (!getUserMedia) {
+        return Promise.reject(new Error('getUserMedia is not implemented'));
+      }
+
+      // we have a working getUserMedia function
+      return new Promise(function (resolve, reject) {
+        // call the function and return it as resolved
+        getUserMedia.call(navigator, constraints, resolve, reject);
+      });
+    };
+  }
+
+  // Capture the image from the video stream when the user clicks on the Capture button
+  captureButton.addEventListener('click', function (event) {
+    canvasElem.style.display = 'block'; // show the canvas and
+    videoPlayer.style.display = 'none'; // hide the live video (but it's still streaming)
+    captureButton.style.display = 'none';
+    // access the canvas to be able to draw on it
+    var context = canvasElem.getContext('2d');
+    // capture the current video stream image and draw it to the canvas, and keep the width/height image ratio
+    context.drawImage(
+      videoPlayer, 0, 0, // source, top, left and height below
+      canvasElem.width, videoPlayer.videoHeight / (videoPlayer.videoWidth / canvasElem.width)
+    );
+    // now stop the video stream
+    videoPlayer.srcObject.getVideoTracks().forEach(function (track) {
+      track.stop();
+    });
+    picture = dataURItoBlob(canvasElem.toDataURL());
+  });
+
+  // now we have access to getUserMedia (either natively or as implemented above with a polyfill)
+  // at this stage, the browser will show a prompt to the user to allow access to video or audio if that wasn't done yet
+  navigator.mediaDevices.getUserMedia({video: true}) // (altern. audio: true)
+    .then(function (stream) {
+      videoPlayer.srcObject = stream;
+      videoPlayer.style.display = 'block';
+    })
+    .catch(function (error) {
+      console.log(error);
+      // show the image picker instead if there is no live access to video
+      imagePickerArea.style.display = 'block';
+    });
+}
+
 function openCreatePostModal() {
   // show the modal by sliding it up from bottom of the viewport (100vH) to the top (0vH)
   createPostArea.style.transform = 'translateY(0)';
+  initializeMedia();
 
 
   if (deferredPrompt) {
@@ -45,6 +111,10 @@ function openCreatePostModal() {
 function closeCreatePostModal() {
   // make the modal to drop down and out of the viewport
   createPostArea.style.transform = 'translateY(100vH)'; 
+  // hide the media stuff
+  canvasElem.style.display = 'none';
+  videoPlayer.style.display = 'none';
+  imagePickerArea.style.display = 'none';
 }
 
 // allows to save items on demand
@@ -138,6 +208,7 @@ if ('indexedDB' in window) {
   });
 }
 
+
 /**
  * Action triggered by the Submit button of the form - send data to the backend
  */
@@ -156,7 +227,7 @@ form.addEventListener('submit', function (event) {
     id: new Date().toISOString(),
     title: titleInput.value,
     location: locationInput.value,
-    image: 'https://firebasestorage.googleapis.com/v0/b/pwagramma.appspot.com/o/sf-boat.jpg?alt=media&token=634a57d9-8726-49c5-a6a1-32c2a327bfb1'
+    image: picture
   };
 
   // if we have a serviceWorker and a SyncManager, we can defer the 

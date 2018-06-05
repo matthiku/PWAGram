@@ -3,15 +3,15 @@
 importScripts('/src/js/idb.js');
 importScripts('/src/js/utility.js');
 
-var version = 2;
-var CACHE_STATIC_NAME = 'static-v' + version;
-var CACHE_DYNAMIC_NAME = 'dynamic-v' + version;
+var CACHE_STATIC_NAME = 'static-v11';
+var CACHE_DYNAMIC_NAME = 'dynamic-v8';
 var STATIC_FILES = [
   '/',
   '/index.html',
   '/offline.html',
   '/src/js/app.js',
   '/src/js/feed.js',
+  '/src/js/utility.js',
   '/src/js/idb.js',
   '/src/js/material.min.js',
   '/src/css/app.css',
