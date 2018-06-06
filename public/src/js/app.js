@@ -9,7 +9,7 @@ if (!window.Promise) {
 
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker
-    .register('/sw.js')
+    .register('/service-worker.js')  // from the workbox package
     .then(function () {
       console.log('Service worker registered!');
     })
