@@ -3,7 +3,7 @@
 importScripts('/src/js/idb.js');
 importScripts('/src/js/utility.js');
 
-var CACHE_STATIC_NAME = 'static-v11';
+var CACHE_STATIC_NAME = 'static-v26';
 var CACHE_DYNAMIC_NAME = 'dynamic-v8';
 var STATIC_FILES = [
   '/',
@@ -275,23 +275,25 @@ self.addEventListener('notificationclose', function (event) {
  * Listen to PUSH NOTIFICATIONS 
  */
 self.addEventListener('push', (event) => {
-  console.log('Push notification received', event);
-
+  
   // receive the notification
   var data = { // initial dummy values
     title: 'New',
     content: 'Something new happended',
-    openUrl: '/'
+    openUrl: '/',
+    preview: '/src/images/icons/app-icon-96x96.png'
   };
   if (event.data) {
     data = JSON.parse(event.data.text());
   }
+  console.log('Push notification received', data);
 
   // show the notification
   var options = {
     body: data.content,
     icon: '/src/images/icons/app-icon-96x96.png',
     badge: '/src/images/icons/app-icon-96x96.png',
+    image: data.preview,
     data: {
       url: data.openUrl
     }

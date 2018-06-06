@@ -1,3 +1,4 @@
+/* jshint esversion: 6 */
 
 var shareImageButton = document.querySelector('#share-image-button');
 var createPostArea = document.querySelector('#create-post');
@@ -15,9 +16,57 @@ var captureButton = document.querySelector('#capture-btn');
 var imagePickerArea = document.querySelector('#pick-image');
 var picture;
 
-// progressive way of using device media
+var locationBtn = document.querySelector('#location-btn');
+var locationLoader = document.querySelector('#location-loader');
+var fetchedLocation = '0,0';
+
+/**
+ * fetch the LOCATION (if supported and allowed by the user)
+ */
+locationBtn.addEventListener('click', (event) => {
+    
+  locationBtn.style.display = 'none';
+  locationLoader.style.display = 'block';
+
+  navigator.geolocation.getCurrentPosition(
+    (position) => {
+      // we received the position
+      console.log(position);
+      locationBtn.style.display = 'inline';
+      locationLoader.style.display = 'none';
+      // TODO: use Google's Geo API to fetch a proper address for this location
+      fetchedLocation = `${position.coords.latitude},${position.coords.longitude}`;
+      locationInput.value = fetchedLocation;
+      document.querySelector('#manual-location').classList.add('is-focused');
+    },
+    (error) => {
+      console.log(error);
+      locationBtn.style.display = 'inline';
+      locationLoader.style.display = 'none';
+      alert('Failed to get location, try again later or enter manually!');
+      fetchedLocation = '0,0';
+    },
+    {
+      // location finding options
+      timeout: 5000
+    }
+  );
+});
+function initializeLocation() {
+  if (!('geolocation' in navigator)) {
+    locationBtn.style.display = 'none';
+  }
+}
+
+
+/**
+ * initializeMedia - show the live video stream if available
+ * 
+ * using device media in a progressive way
+ */
 function initializeMedia() {
-  // create our own polyfill if the browser doesn't support media devices 
+
+  // create our own POLYFILL if the browser doesn't support media devices 
   if (!('mediaDevices' in navigator)) {
     navigator.mediaDevices = {};
   }
@@ -26,7 +75,7 @@ function initializeMedia() {
   if (!('getUserMedia' in navigator.mediaDevices)) {
     navigator.mediaDevices.getUserMedia = function (constraints) {
       // try to get older implementations of this feature from Safari or Firefox browsers
-      var getUserMedia = navigator.webkitGetUserMedia || mozGetUserMedia;
+      var getUserMedia = navigator.webkitGetUserMedia || navigator.mozGetUserMedia;
       // still none available - reject this feature promise
       if (!getUserMedia) {
         return Promise.reject(new Error('getUserMedia is not implemented'));
@@ -53,10 +102,10 @@ function initializeMedia() {
       canvasElem.width, videoPlayer.videoHeight / (videoPlayer.videoWidth / canvasElem.width)
     );
     // now stop the video stream
-    videoPlayer.srcObject.getVideoTracks().forEach(function (track) {
-      track.stop();
-    });
+    stopVideoStream();
     picture = dataURItoBlob(canvasElem.toDataURL());
+    // scroll down to make sure the submit button is visible
+    document.location.href = '#post-btn';
   });
 
   // now we have access to getUserMedia (either natively or as implemented above with a polyfill)
@@ -73,11 +122,25 @@ function initializeMedia() {
     });
 }
 
+
+/**
+ * Handle files beeing selected by the user in the image picker
+ */
+imagePicker.addEventListener('change', (event) => {
+  // get the list of files but only use the first one
+  picture = event.target.files[0];
+  // once the user clicks on the "Add" button, this picture file will be used for uploading
+});
+
+
 function openCreatePostModal() {
   // show the modal by sliding it up from bottom of the viewport (100vH) to the top (0vH)
-  createPostArea.style.transform = 'translateY(0)';
-  initializeMedia();
+  setTimeout(() => {
+    createPostArea.style.transform = 'translateY(0)';
+  }, 500);
 
+  initializeMedia();  // check if we have access to media (camera), then show it
+  initializeLocation(); // check if we have access to the location
 
   if (deferredPrompt) {
     deferredPrompt.prompt();
@@ -108,14 +171,28 @@ function openCreatePostModal() {
   // }
 }
 
+
 function closeCreatePostModal() {
-  // make the modal to drop down and out of the viewport
-  createPostArea.style.transform = 'translateY(100vH)'; 
   // hide the media stuff
+  stopVideoStream();
   canvasElem.style.display = 'none';
   videoPlayer.style.display = 'none';
   imagePickerArea.style.display = 'none';
+  locationLoader.style.display = 'none';
+  captureButton.style.display = 'inline';
+  locationBtn.style.display = 'inline';
+  // make the modal to drop down and out of the viewport
+  setTimeout(() => {    
+    createPostArea.style.transform = 'translateY(100vH)'; 
+  }, 10);
 }
+
+function stopVideoStream() {
+  if (videoPlayer.srcObject) {
+    videoPlayer.srcObject.getVideoTracks().forEach( (track) => track.stop() );
+  }
+}
+
 
 // allows to save items on demand
 function onSaveButtonClicked(event) {
@@ -210,7 +287,7 @@ if ('indexedDB' in window) {
 
 
 /**
- * Action triggered by the Submit button of the form - send data to the backend
+ * Action triggered by the SUBMIT button of the form - send data to the backend
  */
 form.addEventListener('submit', function (event) {
   event.preventDefault();
@@ -227,6 +304,7 @@ form.addEventListener('submit', function (event) {
     id: new Date().toISOString(),
     title: titleInput.value,
     location: locationInput.value,
+    rawLocation: fetchedLocation,
     image: picture
   };
 

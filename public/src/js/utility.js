@@ -104,7 +104,8 @@ function sendData(url, data) {
   postData.append('id', data.id);
   postData.append('title', data.title);
   postData.append('location', data.location);
-  postData.append('file', data.image, data.id + '.ong');
+  postData.append('rawLocation', data.rawLocation);
+  postData.append('file', data.image, data.id + '.png');
 
   return fetch(url, {
       method: 'POST',

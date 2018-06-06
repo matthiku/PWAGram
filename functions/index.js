@@ -79,7 +79,7 @@ exports.storePostData = functions.https.onRequest(
 
       // This callback will be invoked after all uploaded files are saved.
       busboy.on("finish", () => {
-        var bucket = gcs.bucket("YOUR_PROJECT_ID.appspot.com");
+        var bucket = gcs.bucket("pwagramma.appspot.com");
         bucket.upload(
           upload.file, {
             uploadType: "media",
@@ -91,13 +91,18 @@ exports.storePostData = functions.https.onRequest(
             }
           },
           (err, file) => { // execute this once the file upload was successful
+
+            // https://firebasestorage.googleapis.com/v0/b/pwagramma.appspot.com/o/2018-06-06T08%3A35%3A05.624Z.png?alt=media&token=0913b93a-7183-43e0-8acf-3800db124233
+            let imageName = 'https://firebasestorage.googleapis.com/v0/b/' + bucket.name + '/o/' + encodeURIComponent(file.name) + '?alt=media&token=' + uuid;
+            
             if (!err) {
               // write the new post to the database
               admin.database().ref('posts').push({
                 id: fields.id,
                 title: fields.title,
                 location: fields.location,
-                image: 'https://firebasestorage.googleapis.com/v0/b/' + bucket.name + '/0/' + encodeURIComponent(file.name) + '?alt=media&token=' + uuid
+                rawLocation: fields.rawLocation,
+                image: imageName
               })
               .then(() => {
                 // send a push message to all clients that a new post was posted
@@ -121,6 +126,7 @@ exports.storePostData = functions.https.onRequest(
                   webpush.sendNotification(pushConfig, JSON.stringify({
                     title: 'New Post',
                     content: 'New Post added!',
+                    preview: imageName,
                     openUrl: '/help'
                   }));
                 });
