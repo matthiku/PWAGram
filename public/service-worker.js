@@ -1,29 +1,10 @@
+/* jshint esversion: 6 */
+
 importScripts("https://storage.googleapis.com/workbox-cdn/releases/3.2.0/workbox-sw.js");
+importScripts('/src/js/idb.js');
+importScripts('/src/js/utility.js');
 
-// fonts etc. should be cached and fetched from cache first, then validated from the network
-workbox.routing.registerRoute(
-  /.*(?:googleapis|gstatic)\.com.*$/,
-  workbox.strategies.staleWhileRevalidate({
-    cacheName: 'google-fonts'
-  })
-);
-
-// material design CSS file
-workbox.routing.registerRoute(
-  'https://cdnjs.cloudflare.com/ajax/libs/material-design-lite/1.3.0/material.indigo-pink.min.css',
-  workbox.strategies.staleWhileRevalidate({
-    cacheName: 'material-css'
-  })
-);
-
-// images from posts
-workbox.routing.registerRoute(
-  /.*(?:firebasestorage\.googleapis)\.com.*$/,
-  workbox.strategies.staleWhileRevalidate({
-    cacheName: 'post-images'
-  })
-);
-
+// static files
 workbox.precaching.precacheAndRoute([
   {
     "url": "404.html",
@@ -87,7 +68,7 @@ workbox.precaching.precacheAndRoute([
   },
   {
     "url": "sw-base.js",
-    "revision": "ba3b31a0a7b218e7252465e4528f9342"
+    "revision": "30679c3f4792488421073264e457fa42"
   },
   {
     "url": "sw.js",
@@ -114,3 +95,55 @@ workbox.precaching.precacheAndRoute([
     "revision": "0f282d64b0fb306daf12050e812d6a19"
   }
 ]);
+
+
+// images from posts
+workbox.routing.registerRoute(
+  /.*(?:firebasestorage\.googleapis)\.com.*$/,
+  workbox.strategies.staleWhileRevalidate({
+    cacheName: 'post-images'
+  })
+);
+
+// fonts etc. should be cached and fetched from cache first, then validated from the network
+workbox.routing.registerRoute(
+  /.*(?:fonts\.googleapis|gstatic)\.com.*$/,
+  workbox.strategies.staleWhileRevalidate({
+    cacheName: 'google-fonts'
+  })
+);
+
+// material design CSS file
+workbox.routing.registerRoute(
+  'https://cdnjs.cloudflare.com/ajax/libs/material-design-lite/1.3.0/material.indigo-pink.min.css',
+  workbox.strategies.staleWhileRevalidate({
+    cacheName: 'material-css'
+  })
+);
+
+// own caching strategy for database get requests
+workbox.routing.registerRoute(
+  /.*(?:pwagramma\.firebaseio\.com\/posts|pwagramma\.firebaseio\.com\/subscriptions)\.json.*$ / ,
+  (args) => {
+    return fetch(args.event.request)
+      .then(function (res) {
+        var clonedRes = res.clone();
+        clearAllData('posts')
+          .then(function () {
+            return clonedRes.json();
+          })
+          .then(function (data) {
+            // loop through each item in the data object from firebase
+            console.log('[Service Worker] cloned response from fetching', event.request.url, data);
+            for (var key in data) {
+              writeData('posts', data[key]);
+            }
+          });
+        return res; // return the original response to the frontend javascript app
+      });
+  }
+);
+
+
+
+

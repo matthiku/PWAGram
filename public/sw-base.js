@@ -1,8 +1,24 @@
+/* jshint esversion: 6 */
+
 importScripts("https://storage.googleapis.com/workbox-cdn/releases/3.2.0/workbox-sw.js");
+importScripts('/src/js/idb.js');
+importScripts('/src/js/utility.js');
+
+// static files
+workbox.precaching.precacheAndRoute([]);
+
+
+// images from posts
+workbox.routing.registerRoute(
+  /.*(?:firebasestorage\.googleapis)\.com.*$/,
+  workbox.strategies.staleWhileRevalidate({
+    cacheName: 'post-images'
+  })
+);
 
 // fonts etc. should be cached and fetched from cache first, then validated from the network
 workbox.routing.registerRoute(
-  /.*(?:googleapis|gstatic)\.com.*$/,
+  /.*(?:fonts\.googleapis|gstatic)\.com.*$/,
   workbox.strategies.staleWhileRevalidate({
     cacheName: 'google-fonts'
   })
@@ -16,12 +32,29 @@ workbox.routing.registerRoute(
   })
 );
 
-// images from posts
+// own caching strategy for database get requests
 workbox.routing.registerRoute(
-  /.*(?:firebasestorage\.googleapis)\.com.*$/,
-  workbox.strategies.staleWhileRevalidate({
-    cacheName: 'post-images'
-  })
+  /.*(?:pwagramma\.firebaseio\.com\/posts|pwagramma\.firebaseio\.com\/subscriptions)\.json.*$ / ,
+  (args) => {
+    return fetch(args.event.request)
+      .then(function (res) {
+        var clonedRes = res.clone();
+        clearAllData('posts')
+          .then(function () {
+            return clonedRes.json();
+          })
+          .then(function (data) {
+            // loop through each item in the data object from firebase
+            console.log('[Service Worker] cloned response from fetching', event.request.url, data);
+            for (var key in data) {
+              writeData('posts', data[key]);
+            }
+          });
+        return res; // return the original response to the frontend javascript app
+      });
+  }
 );
 
-workbox.precaching.precacheAndRoute([]);
+
+
+
